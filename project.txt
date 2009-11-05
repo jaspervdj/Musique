@@ -1,0 +1,348 @@
+############################################################
+# Het package musique
+############################################################
+
+In het package musique zitten slechts twee klassen, en dan
+de andere packages. De klasse Musique is de hoofdklasse van
+de applicatie. De main functie hiervan start de toepassing
+door het hoofdvenster (een MusiqueFrame) aan te maken.
+
+De klasse Model is een abstracte bovenklasse voor de meeste
+modellen.
+
+############################################################
+# Het package musique.collectiondata
+############################################################
+
+In dit package zitten de klassen die gegevens over een
+collectie bewaren. Een collectie bestaat uit drie modellen:
+
+- Een Collection. Hierin staat algemene informatie over de
+  collectie, zoals bijvoorbeeld de naam.
+
+- Een CollectionDataModel. Dit is een model die alle de
+  releases uit deze collectie bijhoudt. In dit model zijn de
+  releases per jaar gegroepeerd.
+
+- Een CollectionSelectionModel. Dit is een model waarin de
+  huidige geselecteerde release in bijgehouden wordt.
+
+Releases zijn zelf ook modellen (de data kan veranderen als
+meer informatie beschikbaar wordt), en zitten in de klasse
+Release. Een Release bevat verschillende liedjes, en een
+liedje wordt opgeslagen in de klasse Track.
+
+Collection en Release modellen werken volgens het volgende
+MVC patroon:
+- De Loader (klasse die het object dient te laden) verandert
+  gegevens in het Collection of Release object.
+- Dit object merkt dat er veranderingen gebeurden en brengt
+  al zijn luisteraars op de hoogte.
+- In de GUI (een luisteraar) wordt de nieuw geladen
+  informatie getoond.
+
+CollectionDataModel is geen standaard model en gebruikt
+in plaats van stateChanged andere methodes die meer
+informatie verschaffen aan de view, zoals bijvoorbeeld
+releaseAdded( Release release, int index ). Hierdoor
+kunnen de views voor dit model zich accurater updaten.
+
+De views van deze klassen moeten daarom de interface
+CollectionDataListener implementeren.
+
+Om deze klasse niet te groot te laten worden, splitste ik
+ze op in:
+
+- AbstractCollectionDataModel, waarin het "Model werk" kan
+  gebeuren, zoals luisteraars registreren en events firen.
+
+- CollectionDataModel, waarin de concrete code staat die
+  ervoor zorgt dat we releases kunnen bijhouden.
+  
+Zowel Release als Collection zijn subklassen van de klasse
+Loadable. Dit zorgt ervoor dat ze een isLoaded() methode
+hebben.
+
+############################################################
+# Het package musique.loaders
+############################################################
+
+In het project moet veel data geladen worden. Omdat al deze
+laadklassen code gemeenschappelijk zouden hebben, gebruikte
+ik de volgende klasse structuur.
+
+Loader is een abstracte klasse die object kan laden in de
+achtergrond en in de voorgrond, doordat Loader een extensie
+is van Thread. Om een Loader te schrijven, dienen enkel de
+methodes load() en isDone() overschreven te worden.
+
+ImageLoader is een Loader die gebruikt kan worden om
+afbeeldingen in te laden.
+
+DiscogsXMLLoader is een gemeenschappelijke bovenklasse voor
+alle klassen die XML data van Discogs halen. Hiervan zijn
+CollectionLoader en ReleaseLoader extensies, hun doel is om
+collecties respectievelijk releases te laden.
+
+Tussen verschillende soorten collecties zijn nog subtiele
+verschillen, en daarom breiden de volgende klassen
+CollectionLoader uit:
+
+- LabelCollectionLoader: om collecties van platenlabels te
+  laden.
+- ArtistCollectionLoader: om collecties van een bepaalde
+  artiest te laden.
+- CustomCollectionLoader: dit haalt een collectie uit een
+  eerder opgeslagen bestand.
+- NewCollectionLoader: dit is een Loader die een nieuwe,
+  lege collectie aanmaakt.
+
+Verder bevat dit package ook de klasse CollectionWriter.
+Deze klasse bevat de belangrijke methode write(), die een
+zelfgemaakte collectie naar een bestand kan wegschrijven,
+om later weer geladen te worden.
+
+############################################################
+# Het package musique.resources
+############################################################
+
+Dit package bevat alle resources voor de applicatie -
+Afbeeldingen en properties bestanden.. Verder bevat het een
+klasse ResourceManager die gebruikt kan worden om deze
+resources te laden. Dit is een singleton, met de methoden:
+- URL getResource( String fileName )
+- ImageIcon getIcon( String fileName )
+
+De klasse I18nManager is ook een singleton, bedoeld om de
+internationalisatie van de applicatie te vergemakkelijken.
+Een vertaling kan hieraan opgevraagd worden met de methode
+getMessage( String key ). Als deze vertaling ergens in een
+menu terechtkomt, is er waarschijnlijk ook een mnemonic voor
+nodig. Daarvoor dient de methode getMnemonic( String key ),
+die als argument dezelfde key neemt als getMessage. Deze
+methode kijkt eerst of er een speciaal gedefinieerde
+mnemonic is door te kijken naar de sleutel key+"_mn", en als
+deze niet aanwezig is, neemt het de eerste letter van de
+vertaling als mnemonic.
+
+############################################################
+# Het package musique.musiqueframe
+############################################################
+
+Het package musique.musiqueframe bevat de klasse
+MusiqueFrame (het hoofdvenster van de applicatie) en alle
+panelen, acties en andere klassen die hiermee geassocieerd
+zijn.
+
+MusiqueFrame is het hoofdvenster van de applicatie. Als men
+de constructor hiervan aanroept, zal het programma starten.
+Het hoofdvenster bevat een menu met verschillende acties.
+Door deze acties is de gebruiker in staat andere vensters
+te openen, selecteren en wijzigen.
+
+De gebruiker kan vier mogelijke collecties openen:
+- Een artiest opzoeken op Discogs.
+- Een label opzoeken op Discogs.
+- Een collectie openen uit een bestand.
+- Een nieuwe collectie aanmaken.
+
+Omdat deze acties heel wat code delen, is er de
+gemeenschappelijke bovenklasse OpenAction. Deze wordt vier
+maal uitgebreid om de verschillende open acties te
+realiseren.
+
+Dit package bevat ook de klasse VisualisationSelectionModel,
+een selectiemodel voor de geselecteerde visualisatie. Het
+collectievenster dat van visualisatie kan veranderen is hier
+een view voor.
+
+Een belangrijk aspect van het programma is de manier waarop
+de verschillende vensters tesamen werken. Het belangrijskte
+deel hiervan is geimplementeerd in de klasse FrameListModel.
+
+Dit is een model dat een lijst van vensters bijhoudt. Als er
+hieraan vensters worden toegevoegd of verwijdert worden de
+methodes frameAdded respectievelijk frameRemoved opgeroepen
+van alle views (van de klasse FrameListListener) die naar
+dit model luisteren.
+
+Een view hiervan is de lijst met alle open vensters die zich
+in het hoofdvenster bevindt. Dit is geimplementeerd in de
+klasse FramesMenu.
+
+############################################################
+# Het package musique.collectionframe
+############################################################
+
+Dit package bevat de klasse CollectionFrame, een venster
+waarin een collectie wordt afgebeeld. Eveneens bevat dit
+package de meeste componenten en acties voor dit venster.
+
+De klasse CollectionFrame is geassocieerd met een object van
+de klasse Collection, waaruit de informatie gehaald kan
+worden.
+
+De klasse CollectionFrame is een Panel met een GridLayout,
+bestaande uit drie panelen:
+
+- Een CollectionInformationPanel. Hierin staat een JTextArea
+  met wat informatie over de artiest, en een afbeelding.
+
+- Een CardLayout met verschillende Visualisations. Hierover
+  staat meer uitleg bij het package musique.visualisations.
+
+- Een ReleaseInformationPanel. Hierin staat informatie over
+  de huidige geselecteerde Release, met onder meer een tabel
+  van tracks. Om deze tabel te tonen is er de klasse
+  ReleaseTracksTableModel, een TableModel voor JTable dat de
+  tracks in een release modelleert .
+
+De CollectionInformationPanel is een view voor de Collection
+die met het CollectionFrame geassocieerd is: als de
+collectie verandert (bijvoorbeeld als er in de achtergrond
+meer informatie geladen wordt) zal dit paneel zichzelf
+updaten.
+
+Op dezelfde manier is ReleaseInformationPanel een view voor
+de geselecteerde Release, maar eveneens een view voor
+CollectionSelectionModel: ook als de selectie verandert, zal
+dit paneel zichzelf updaten.
+
+In het menu zijn verschillende acties aanwezig, die telkens
+op het juiste moment enabled zijn. Daarom zijn deze acties
+telkens views van het object waarop ze betrekking hebben.
+
+Zo is de actie om de geselecteerde Release te verwijderen
+een view van het CollectionSelectionModel - dat de
+geselecteerde Release bevat.
+
+Het menu om de geselecteerde Release toe te voegen aan een
+andere collectie (AddToCollectionMenu) is een view van het
+FrameListModel, dat alle vensters bevat. Op deze manier kan
+het zichzelf disablen als er geen andere vensters zijn.
+
+De acties in dit menu (AddToCollectionAction) zijn views van
+zowel het FrameListModel als van het
+CollectionSelectionModel, zodat het gedisabled kan worden
+- Als de release al in de collectie zit.
+- Als er geen release geselecteerd is.
+
+############################################################
+# Het package musique.visualisations
+############################################################
+
+Omdat er verschillende visualisaties beschikbaar zijn, en
+elke visualisatie een aantal klassen inneemt is het
+logischer om dit een apart package te steken, en niet in
+het package collectionframe.
+
+Ten eerste bevat dit package een klasse ReleaseIconManager.
+Dit singleton  dient om bepaalde releases te associeren met
+bepaalde iconen. Momenteel gebeurt dit op basis van de
+inhoud van release.getFormat(). De belangrijkste methode is
+getReleaseIcon( Release release ), die een passend Icon
+teruggeeft. Alle visualisaties maken hiervan gebruik.
+
+Omdat alle visualisaties code gemeenschappelijk hebben, is
+er de bovenklasse Visualisation. Op deze manier kunnen we
+ook de Factory klasse VisualisationFactory maken, met de
+methode createVisualisation. Elke visualisatie heeft een
+factory die de passende visualisatie kan aanmaken.
+
+Alle  visualisaties zijn een JPanel, en implementeren ook
+CollectionDataListener. Een visualisatie moet immers op een
+paneel geplaatst kunnen worden, en ook moet elke
+visualisatie op de hoogte zijn van veranderingen in het
+CollectionDataModel.
+
+TabbedVisualisation is een visualisatie die verschillende
+releases voorstelt, ingedeeld onder tabs. Daarvoor gebruikt
+een JTabbedPane waarin verschillende JList objecten zitten.
+(Eigenlijk niet rechtstreeks, elke JList is eerst nog
+verpakt in een JScrollPane.) De JList gebruikt een ListModel
+van de klasse TabbedVisualisationListModel, die de releases
+kan teruggeven als elementen van de lijst. Dit ListModel
+luistert niet rechtstreeks naar het CollectionDataModel,
+maar de TabbedVisualisation geeft de events door.
+
+Om de lijsten wat mooier te maken overschrijf ik ook de
+default ListCellRenderer. Nu kunnen er icoontjes geplaatst
+worden door een TabbedVisualisationListCellRenderer.
+
+TreeVisualisation stelt de verschillende releases voor door
+een boom. Daarvoor wordt natuurlijk een JTree gebruikt. Om
+de boom aan te passen, hebben we zelf een TreeModel en een
+TreeCellRenderer geschreven.
+
+TreeVisualisationTreeModel is het TreeModel dat de releases
+voorstelt in een boom. In plaats van TreeModel volledig te
+implementeren, breiden we DefaultTreeModel uit, omdat deze
+klasse een aantal handig fire-methodes heeft. Ons TreeModel
+luistert zelf naar de veranderingen in het
+CollectionDataModel en past zichzelf aan. Om de
+verschillende releases in de boom te zetten gebruiken we
+telkens een DefaultMutableTreeNode, omdat makkelijk te
+gebruiken zijn, en we kunnen onze release eraan meegeven als
+"user object".
+
+We overschrijven ook de TreeCellRenderer zodat we de
+icoontjes van ReleaseIconManager in de boom kunnen plaatsen.
+Deze code staat in TreeVisualisationTreeCellRenderer. Dit is
+een zeer korte klasse die enkel een icoontje plaatst bij
+elke DefaultMutableTreeNode die een Release als user object
+heeft.
+
+Tenslotte is er CoverVisualisation. Deze stelt de
+verschillende releases voor als een animatie van covers van
+die releases, per jaar.
+
+De informatie hiervan zit in CoverVisualisationModel. Dit is
+een model dat de huidige geselecteerde release en de huidige
+staat van de animatie bijhoud.
+
+De animatie zelf staat in CoverVisualisationView. De
+belangrijkste methode is hier paintComponent, die de
+animatie tekent. Dit is ook een ChangeListener, zodat het
+CoverVisualisationModel hieraan kan vertellen dat de view
+zichzelf moet hertekenen.
+
+Bovenaan staat een label met twee pijltjes, waarmee de
+gebruiker een jaar vooruit en een jaar terug kan gaan.
+Onderaan staat ook een label met twee pijltjes, waarmee de
+gebruiker een release vooruit en een release terug kan gaan.
+Deze twee objecten hebben veel code gemeenschappelijk,
+daarom is er de abstracte klasse CoverVisualisationBrowser.
+
+De bovenste browser is van het type
+CoverVisualisationYearBrowser, en de onderste van het type
+CoverVisualisationReleaseBrowser. Deze twee klassen
+overschrijven gewoon wat er in het middelste label moet
+komen en wat er moet gebeuren als de gebruiker op een knop
+drukt. Ze zijn dus controller voor het
+CoverVisualisationModel, en tegelijk view, want het label
+past zich aan, alsook de knoppen.
+
+Behalve deze knoppen willen we ook dat de gebruiker met het
+muiswiel door de releases kan browsen, en daarom is er de
+klasse CoverVisualisationEventReceiver. Deze klasse ontvangt
+muis events, en voert dan acties uit op het
+CoverVisualisationModel. Dit is dus ook een controller.
+
+############################################################
+# Program flow voorbeelden
+############################################################
+
+De gebruiker opent het programma.
+  De hoofdvenster wordt geconstrueerd en getoond.
+
+De gebruiker opent een artiest.
+  Een OpenArtistAction wordt uitgevoerd. Hierin wordt een
+  standaard input dialog getoond. Een nieuwe, lege
+  Collection wordt aangemaakt, en een ArtistCollectionLoader
+  waaraan de collectie wordt meegegeven. De loader begint te
+  laden in de achtergrond. Ondertussen wordt een
+  CollectionFrame aangemaakt met de nieuwe collectie. Nu zal
+  de loader verder laden en informatie aanvullen, en de
+  componenten van het CollectionFrame zullen zichzelf
+  aanpassen omdat ze als view zijn geregistreerd bij de
+  collectie.
